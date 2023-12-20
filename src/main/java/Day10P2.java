@@ -1,9 +1,8 @@
-import java.sql.Array;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Scanner;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-public class Day10 {
+public class Day10P2 {
     static int startX;
     static int startY;
 
@@ -35,6 +34,37 @@ public class Day10 {
             return Arrays.toString(exits);
         }
     }
+
+    static class Coordinate{
+        int x, y;
+
+        public Coordinate(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Coordinate that = (Coordinate) o;
+            return x == that.x && y == that.y;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y);
+        }
+
+        @Override
+        public String toString() {
+            return "[" +
+                    "x=" + x +
+                    ", y=" + y +
+                    ']';
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         Scanner scanner = IOUtils.getScanner("day10.txt");
         long sum = 0;
@@ -91,9 +121,12 @@ public class Day10 {
         int x = startX;
         int y = startY;
 
+        HashSet<Coordinate> path = new HashSet<>();
+
         int count = 0;
         do{
             count++;
+            path.add(new Coordinate(x, y));
             Exits next = maze[x][y].theOther(enteredFrom);
             switch(next){
                 case SOUTH:
@@ -122,7 +155,70 @@ public class Day10 {
             System.out.println("Moved " + next.name() + " to " + x + "," + y);
         }while(x != startX || y!=startY);
 
-        System.out.println("Part1: " + count / 2.0);
+//        System.out.println("Detected the following loop: ");
+//        for(int xx = 0; xx < maze.length; xx++){
+//            for (int yy = 0; yy<maze[xx].length; yy++){
+//                if(path.contains(new Coordinate(xx, yy))){
+//                    System.out.print("+");
+//                }
+//                else{
+//                    System.out.print("o");
+//                }
+//            }
+//            System.out.println();
+//        }
+
+        Set<Coordinate> insidePoints = new HashSet<>();
+        for(int i = 0; i < maze.length; i++){
+            for(int k = 0; k < maze[i].length; k++){
+                if(path.contains(new Coordinate(i, k))) {
+
+                    System.out.print("+");
+                    continue;
+                }
+
+                boolean streak = false;
+                int intersections = 0;
+                Point streakStart = null;
+                for (int north = i - 1; north >= 0; north--){
+                    if(!path.contains(new Coordinate(north, k))) {
+                        streak = false;
+                        continue;
+                    }
+
+                    if(maze[north][k].hasExit(Exits.NORTH) && maze[north][k].hasExit(Exits.SOUTH)){
+                        continue;
+                    }
+
+                    if(!streak){
+                        if(maze[north][k].hasExit(Exits.NORTH) ){
+                            streakStart = maze[north][k];
+                            streak = true;
+                        }
+                        intersections += 1;
+                    }
+                    else{
+                        if(!maze[north][k].hasExit(Exits.NORTH)){
+                            streak = false;
+                            if((maze[north][k].hasExit(Exits.WEST) && streakStart.hasExit(Exits.WEST)) || (maze[north][k].hasExit(Exits.EAST) && streakStart.hasExit(Exits.EAST))){
+                                intersections -= 1;
+                            }
+                        }
+                    }
+                }
+
+                if(intersections %2 != 0){
+                    insidePoints.add(new Coordinate(i, k));
+                    System.out.print("I");
+                }else{
+                    System.out.print("O");
+                }
+
+            }
+            System.out.println();
+        }
+
+        System.out.println("Part2: " + insidePoints.size());
     }
 
     private static Exits[] determineStartExits(Point[][] maze, int startX, int startY) {
