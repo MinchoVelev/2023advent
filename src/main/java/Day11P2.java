@@ -1,6 +1,6 @@
 import java.util.*;
 
-public class Day11_Part2 {
+public class Day11P2 {
 static class Coordinate{
         int x;
         int y;
